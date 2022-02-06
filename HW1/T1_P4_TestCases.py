@@ -41,6 +41,7 @@ for part in ['a','d']:
         if len(w_a)!=len(w):
             print("Your weights for part a have the wrong shape. Length should be ", len(w_a), " and you have ", len(w))
         else:
+            print(w_a, w)
             parta_checker = np.array_equal(np.around(w_a,-1),np.around(w,-1))
             if parta_checker:
                 parta_checker = "Pass"

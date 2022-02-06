@@ -36,22 +36,22 @@ sunspot_counts = np.array(sunspot_counts)
 last_year = 1985
 
 # Plot the data.
-plt.figure(1)
-plt.plot(years, republican_counts, 'o')
-plt.xlabel("Year")
-plt.ylabel("Number of Republicans in Congress")
-plt.figure(2)
-plt.plot(years, sunspot_counts, 'o')
-plt.xlabel("Year")
-plt.ylabel("Number of Sunspots")
-plt.figure(3)
-plt.plot(sunspot_counts[years<last_year], republican_counts[years<last_year], 'o')
-plt.xlabel("Number of Sunspots")
-plt.ylabel("Number of Republicans in Congress")
-plt.show()
+# plt.figure(1)
+# plt.plot(years, republican_counts, 'o')
+# plt.xlabel("Year")
+# plt.ylabel("Number of Republicans in Congress")
+# plt.figure(2)
+# plt.plot(years, sunspot_counts, 'o')
+# plt.xlabel("Year")
+# plt.ylabel("Number of Sunspots")
+# plt.figure(3)
+# plt.plot(sunspot_counts[years<last_year], republican_counts[years<last_year], 'o')
+# plt.xlabel("Number of Sunspots")
+# plt.ylabel("Number of Republicans in Congress")
+# plt.show()
 
 # Create the simplest basis, with just the time and an offset.
-X = np.vstack((np.ones(years.shape), years)).T
+# X = np.vstack((np.ones(years.shape), years)).T
 
 # TODO: basis functions
 # Based on the letter input for part ('a','b','c','d'), output numpy arrays for the bases.
@@ -65,11 +65,22 @@ def make_basis(xx,part='a',is_years=True):
     if part == 'a' and is_years:
         xx = (xx - np.array([1960]*len(xx)))/40
         
-    if part == "a" and not is_years:
+    if part == 'a' and not is_years:
         xx = xx/20
-        
-        
-    return None
+    
+    if part == 'a':
+        phi_xx = np.array([[1, *[x ** j for j in range(1,6)]] for x in xx])
+    
+    if part == 'b':
+        phi_xx = np.array([[1, *[np.exp(-((x - uj) ** 2) / 25.) for uj in range(1960, 2011, 5)]] for x in xx])
+    
+    if part == 'c':
+        phi_xx = np.array([[1, *[np.cos(x / j) for j in range(1,6)]] for x in xx])
+    
+    if part == 'd':
+        phi_xx = np.array([[1, *[np.cos(x / j) for j in range(1,26)]] for x in xx])
+
+    return phi_xx
 
 # Nothing fancy for outputs.
 Y = republican_counts
@@ -79,16 +90,44 @@ def find_weights(X,Y):
     w = np.dot(np.linalg.pinv(np.dot(X.T, X)), np.dot(X.T, Y))
     return w
 
+def find_squared_error(X, Y, w):
+    assert len(X) == len(Y), "Invalid arguments X, Y"
+    return sum([(Y[i] - np.dot(X[i,:],w)) ** 2 for i in range(len(X))])
+
 # Compute the regression line on a grid of inputs.
 # DO NOT CHANGE grid_years!!!!!
 grid_years = np.linspace(1960, 2005, 200)
 grid_X = np.vstack((np.ones(grid_years.shape), grid_years))
-grid_Yhat  = np.dot(grid_X.T, w)
+# grid_Yhat  = np.dot(grid_X.T, w)
 
-# TODO: plot and report sum of squared error for each basis
+# TODO: 1 - plot and report sum of squared error for each basis
+for part in ['a', 'b', 'c', 'd']:
+    plt.figure(4)
+
+    # Plot years vs. republican_counts
+    plt.plot(years, Y, 'o')
+
+    # Make basis for training data and find best weights
+    phiX = make_basis(years, part)
+    w = find_weights(phiX, Y)
+    
+    # Calculate squared error
+    print(find_squared_error(phiX, Y, w))
+    
+    # Plot a regression of these weights
+    grid_phiX = make_basis(grid_years, part)
+    grid_Yhat = np.dot(w.T, grid_phiX.T)
+    plt.plot(grid_years, grid_Yhat)
+
+    plt.title(part)
+    plt.xlabel("years")
+    plt.ylabel("republicans")
+    plt.show()
+
+
 
 # Plot the data and the regression line.
-plt.plot(years, republican_counts, 'o', grid_years, grid_Yhat, '-')
-plt.xlabel("Year")
-plt.ylabel("Number of Republicans in Congress")
-plt.show()
+# plt.plot(years, republican_counts, 'o', grid_years, grid_Yhat, '-')
+# plt.xlabel("Year")
+# plt.ylabel("Number of Republicans in Congress")
+# plt.show()
