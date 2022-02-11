@@ -41,7 +41,6 @@ def predict_knn(k=1, tau=1):
         y.append(sum(map(lambda d : d[1], k_closest)) / k)
     return y
 
-
 def plot_knn_preds(k):
     plt.xlim([0, 12])
     plt.ylim([0,3])

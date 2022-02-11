@@ -1,9 +1,3 @@
-#####################
-# CS 181, Spring 2022
-# Homework 1, Problem 4
-# Start Code
-##################
-
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
@@ -14,7 +8,6 @@ republican_counts = []
 sunspot_counts = []
 
 with open(csv_filename, 'r') as csv_fh:
-
     # Parse as a CSV file.
     reader = csv.reader(csv_fh)
 
@@ -35,25 +28,7 @@ republican_counts = np.array(republican_counts)
 sunspot_counts = np.array(sunspot_counts)
 last_year = 1985
 
-# Plot the data.
-# plt.figure(1)
-# plt.plot(years, republican_counts, 'o')
-# plt.xlabel("Year")
-# plt.ylabel("Number of Republicans in Congress")
-# plt.figure(2)
-# plt.plot(years, sunspot_counts, 'o')
-# plt.xlabel("Year")
-# plt.ylabel("Number of Sunspots")
-# plt.figure(3)
-# plt.plot(sunspot_counts[years<last_year], republican_counts[years<last_year], 'o')
-# plt.xlabel("Number of Sunspots")
-# plt.ylabel("Number of Republicans in Congress")
-# plt.show()
-
-# Create the simplest basis, with just the time and an offset.
-# X = np.vstack((np.ones(years.shape), years)).T
-
-# TODO: basis functions
+# Basis functions
 # Based on the letter input for part ('a','b','c','d'), output numpy arrays for the bases.
 # The shape of arrays you return should be: (a) 24x6, (b) 24x12, (c) 24x6, (c) 24x26
 # xx is the input of years (or any variable you want to turn into the appropriate basis).
@@ -97,10 +72,8 @@ def find_squared_error(X, Y, w):
 # Compute the regression line on a grid of inputs.
 # DO NOT CHANGE grid_years!!!!!
 grid_years = np.linspace(1960, 2005, 200)
-grid_X = np.vstack((np.ones(grid_years.shape), grid_years))
-# grid_Yhat  = np.dot(grid_X.T, w)
 
-# TODO: 1 - plot and report sum of squared error for each basis
+# Plot and report sum of squared error for each basis (years vs republicans)
 for part in ['a', 'b', 'c', 'd']:
     plt.figure(4)
 
@@ -112,22 +85,50 @@ for part in ['a', 'b', 'c', 'd']:
     w = find_weights(phiX, Y)
     
     # Calculate squared error
-    print(find_squared_error(phiX, Y, w))
+    err = find_squared_error(phiX, Y, w)
     
-    # Plot a regression of these weights
+    # Plot a regression with weights
     grid_phiX = make_basis(grid_years, part)
     grid_Yhat = np.dot(w.T, grid_phiX.T)
     plt.plot(grid_years, grid_Yhat)
 
-    plt.title(part)
+    plt.title(f'Least squares regression with basis function ({part})\n (squared error: {round(err,5)})')
     plt.xlabel("years")
     plt.ylabel("republicans")
+    plt.savefig(f'4-1-{part}.png')
     plt.show()
 
+# Only consider data before 1985
+sunspot_counts = list(map(lambda i : i[1],
+                      filter(lambda j : j[0] < last_year, zip(years, sunspot_counts))))
+republican_counts = list(map(lambda i : i[1],
+                         filter(lambda j : j[0] < last_year, zip(years, republican_counts))))
+X = np.array(sunspot_counts)
+Y = np.array(republican_counts)
 
+grid_sunspots = np.linspace(0,160,200)
 
-# Plot the data and the regression line.
-# plt.plot(years, republican_counts, 'o', grid_years, grid_Yhat, '-')
-# plt.xlabel("Year")
-# plt.ylabel("Number of Republicans in Congress")
-# plt.show()
+# Plot and report sum of squared error for each basis (sunspots vs republicans)
+for part in ['a', 'c', 'd']:
+    plt.figure(5)
+
+    # Plot sunspots against republicans
+    plt.plot(X, Y, 'o')
+
+    # Make basis for training data and find best weights
+    phiX = make_basis(X, part=part, is_years=False)
+    w = find_weights(phiX, Y)
+    
+    # Calculate squared error
+    err = find_squared_error(phiX, Y, w)
+    
+    # Plot a regression with weights
+    grid_phiX = make_basis(grid_sunspots, part, is_years=False)
+    grid_Yhat = np.dot(w.T, grid_phiX.T)
+    plt.plot(grid_sunspots, grid_Yhat)
+
+    plt.title(f'Least squares regression with basis function ({part})\n (squared error: {round(err,5)})')
+    plt.xlabel("sunspots")
+    plt.ylabel("republicans")
+    plt.savefig(f'4-2-{part}.png')
+    plt.show()
