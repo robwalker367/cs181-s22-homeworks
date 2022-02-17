@@ -18,6 +18,8 @@
 \usepackage{listings}
 \usepackage{common}
 \usepackage{framed}
+\usepackage{physics}
+\usepackage{pythonhighlight} 
 
 \usepackage[mmddyyyy,hhmmss]{datetime}
 
@@ -176,9 +178,86 @@ in the command-line using \texttt{python T1\_P1\_TestCases.py}.
 
 \newpage
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Problem 2
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problem 1}
+
+\subsection{Part 1}
+
+For our training data set $W = \{(x_n, y_n)\}^N_{n=1}$ we want to write down the residual sum of squares loss over the training data $\mcL(W)$ as a function of $\tau$.
+
+The least sum of squares loss for an estimate $\hat{y}$ is given by the following equation.
+\begin{equation*}
+    \mcL(W) = \frac{1}{2} \sum_{i = 1}^N (y_i - \hat{y_i})^2
+\end{equation*}
+From the question, our estimate $\hat{y_i}$ is given by the following equation:
+\begin{equation*}
+    \hat{y_i} = f(x^*) = \sum_{n = 1}^N K(x_n, x^*)y_n
+\end{equation*}
+Then plugging this into the equation for the least sum of squares loss gives us:
+\begin{equation*}
+    \mcL(W) = \frac{1}{2} \sum_{i = 1}^N \left(y_i - \sum_{n=1, i \neq n}^N K(x_n, x_i)y_n\right)^2
+\end{equation*}
+Note that we include the constraint $i \neq j$ to avoid unfairly impacting our loss. Subbing in our kernel function $K$ as given in the question gives us the following expression for the least sum of squares loss as a function of $\tau$.
+\begin{equation*}
+    \mcL(W) = \frac{1}{2} \sum_{i=1}^N \left(y_i - \sum_{n=1, i \neq n}^N \exp{\frac{-||x_n - x_i||^2}{\tau}} y_n\right)^2
+\end{equation*}
+
+\subsection{Part 2}
+
+We now want to take the derivative of the loss function $\mcL(W)$ with respect to $\tau$.
+
+Let us start with the loss function from Part 1.
+\begin{equation*}
+    \mcL(W) = \frac{1}{2} \sum_{i=1}^N \left(y_i - \sum_{n=1, i \neq n}^N \exp{\frac{-||x_n - x_i||^2}{\tau}} y_n\right)^2
+\end{equation*}
+Then taking the derivative with respect to $\tau$ by applying the chain rule gives us:
+\begin{equation*}
+    \frac{\partial \mcL(W)}{\partial \tau} = \sum_{i=1}^N \left(y_i - \sum_{n=1,i\neq n}^N \exp{\frac{-||x_n - x_i||^2}{\tau}} y_n\right) \left( - \sum_{n=1,i\neq n}^N \left(\frac{||x_n - x_i||}{\tau}\right)^2 \exp{ \frac{-||x_n - x_i||^2}{\tau}} y_n \right)
+\end{equation*}
+
+\newpage
+\subsection{Part 3}
+
+We want to write Python code to compute the loss with respect to each kernel for the dataset provided in the question for each $\tau \in \{.01, 2, 100\}$.
+
+Let us run the code in \verb+T1_P1.py+. Note that we do not include the $\frac{1}{2}$ in the loss function so that we can pass the provided CS181 test cases.
+This computes the following losses for each $\tau$:
+\begin{itemize}
+    \item $\tau = 0.5$ loss is $8.75$
+    \item $\tau = 2$ loss is $3.305$
+    \item $\tau = 100$ loss is $120.359$
+\end{itemize}
+
+\subsection{Part 4}
+
+We want to plot $(x*, f(x*))$ for each lengthscale $\tau$ from Part 3 and then provide a discussion. After running the code in \verb+T1_P1.py+ we have the following plot of the effect of each lengthscale $\tau$ on our predictions.
+
+\begin{center}
+    \includegraphics[scale=0.75]{lengthscales.png}
+\end{center}
+
+\noindent We now discuss what happens in each of the three values of $\tau$.
+
+As we can see, a $\tau = 0.01$ looks like it is a poor predictor for any new $x^*$ that is not very close to any points in our training data set. Small values of $\tau$ cause our kernel function to return weights close to $0$ for $x^*$ that are not nearly identical to one of our training data points (i.e., $||x_n - x^*||^2$ is small for some $x_n$), meaning that we only sum points in our training data that are very close to the new $x^*$. This causes the spikes in predictions around the points in our training data set, with the regression predicting $0$ otherwise both when interpolating and extrapolating.
+
+In exactly the opposite cause, a $\tau = 100.0$ causes us to use large weights (i.e., close to $1$) for training set data points even if they are far away from our new $x^*$ (i.e., $||x_n - x^*||$ is large for some $x_n$). This is consistent with the figure, which shows how the regression is inflated and smoother, predicting much higher values for new $x^*$ than are in any of our training data when interpolating. Note that because our kernel is not normalized, our predictions are especially large, since we are, in a way, summing all of the points in our data when making predictions for this range of $x^*$.
+
+Finally, $\tau = 2$ seems to strike a good balance. The regression is smooth, slopes with the observed data, and seems to generalize well when interpolating. This ``good fit" is consistent with what we found numerically: $\tau = 2$ had a much lower loss over the training data than the other choices of $\tau$. Like any choice of $\tau$, extrapolating the regression for $x^*$ that are not within the minimum and maximum training data points will eventually cause predictions to go to $0$ for sufficiently large $||x_n - x^*||$.
+
+This result is the same as what we found numerically: a $\tau = 2$ minimized the loss function. This is because a $\tau = 2$ effectively weights nearby points so that the predictions generalize well and are accurate.
+
+\subsection{Part 5 (Bonus)}
+
+We want to code a gradient descent to optimize the kernel for the data set above, starting the gradient descent from $\tau = 2$. If we run the code in \verb+T1_P1.py+, which runs a gradient descent with $10000$ iterations, a learning rate of $0.1$, and a stop threshold of $1\mathrm{e}{-6}$, then we get the following optimal $\tau = 1.708$ and the following regression.
+\begin{center}
+    \includegraphics[scale=0.75]{lengthscale-optimal.png}
+\end{center}
+The loss of this optimal $\tau$ is $3.205$, which is quite close to the loss of $\tau = 2$ from Part 3 and 4. It seems like there are some minor adjustments to the curve that make this $\tau$ more optimal, while still having it be very generalize-able.
+
+\newpage
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Problem 2
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{problem}[Kernels and kNN, 10pts]
 
@@ -222,6 +301,32 @@ As before, you will plot $x^*$ on the x-axis and the prediction $f(x^*)$ on the 
 
 \end{problem}
 
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problem 2}
+
+\subsection{Part 1}
+We want to implement kNN for $k = \{1, 3, N-1\}$, then plot the results for each $k$ using the kernel function from Problem 1 and $\tau = 1$ to find the distance between points.
+
+After running the code in \verb+T1_P2.py+, we get the following three plots.
+
+\begin{figure}[h]
+\begin{tabular}{ccc}
+    \includegraphics[width=0.5\textwidth]{k1.png} & \includegraphics[width=0.5\textwidth]{k3.png} \\ \multicolumn{2}{c}{\includegraphics[width=0.5\textwidth]{k6.png}}
+\end{tabular}
+\end{figure}
+
+\subsection{Part 2}
+
+First, let us describe the behavior of the functions in the three plots. A value of $k = 1$ only considers the training data point that is closest to the new $x^*$, causing a ``step-like" effect where predictions for $x^*$ are equal to the closest training data point, until a new closest point is reached. A value of $k = 3$ is smoother: since we consider the three closest training data points, our regression seems to be more of an average between the three closest points. Finally, the $k = 6$ case prediction is basically an average of all the training data since $k = 6$ and there are $7$ training data points, with a step around the median of the data.
+
+The behavior of these functions is generally different than from Problem 1. The $k = 1$ function does seem to interpolate somewhat similarly to the $\tau = 0.01$ function in the sense that we return predictions that are identical to the closest training data point for new $x^*$ that are close to a training data point, but the behavior when interpolating for new $x^*$ that are farther away from any training data points is different because for the kernel we use a weight rather than an indicator variable and so return $0$ instead of still returning the value of the closest point. The $k = 3$ case also seems to interpolate similarly to the $\tau = 2.0$ case: both are smoother and seem to average the nearest points to a greater extent than the other functions. All of the kNN functions extrapolate differently than the kernel-based regression. This is similarly due to the fact that kNN uses an indicator variable rather than weights: as the distance between the new $x^*$ and the closest data point increases, eventually the kernel will return $0$, whereas the kNN method continues to return the value of the closest data points.
+
+Based on what I see, there is no value of $k$ and $\tau$ for which kNN and kernel-based regressors produce the exact same classifier. This can be seen in the differences in how each method extrapolates: since kNN uses weights, the predictions eventually go to $0$ as the distance increases between the new $x^*$ and any of the training data points, whereas kNN will continue to return the values of the closest data points.
+
+\subsection{Part 3}
+We did not vary $\tau$ for the kNN approach because varying $\tau$ does not affect the relative values of closeness for the points in our training data to our new point $x^*$, and so thus does not affect our regression. Since kNN uses an indicator variable to choose the $k$-closest points, our prediction only considers which of the training data points are among the $k$-closest points, not how close they actually are to $x^*$. Thus we will always have the same set of $k$-closest points for any $\tau$, and so varying $\tau$ does not affect our regression.
 
 \newpage 
 
@@ -274,10 +379,91 @@ $y$ are scalars, $w$ is also a scalar.
 
 \end{problem}
 
+\newpage
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Problem 4
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problem 3}
+
+\subsection{Part 1}
+We want to derive an expression for the optimal $w$, leaving our answer in terms of moments of the distribution.
+The optimal $w$ minimizes the expected squared loss, which is given by the following expression.
+\begin{equation*}
+    E_{x,y}[(y - \hat{y})^2]
+\end{equation*}
+We can expand this expression, sub-in $\hat{y} = w x$, and apply linearity of expectation.
+\begin{align*}
+    E_{x,y}[(y - \hat{y})^2] &= E_{x,y}[y^2 - 2\hat{y}y + \hat{y}^2]\\
+    &= E_{x,y}[y^2 - 2 w x y + w^2 x^2]\\
+    &= E_{x,y}[y^2] - 2 w E_{x,y}[x y] + w^2 E_{x,y}[x^2]
+\end{align*}
+Notice that $E_{x,y}[x^2] = E_x[x^2]$ and $E_{x,y}[y^2] = E_y[y^2]$. And so we can further simplify this expression.
+\begin{align*}
+    E_{x,y}[(y - \hat{y})^2] &= E_{y}[y^2] - 2 w E_{x,y}[x y] + w^2 E_{x}[x^2]
+\end{align*}
+Then to find the optimal $w$ we can then take the derivative of this expression with respect to $w$.
+\begin{align*}
+    \frac{\partial E_{x,y}[(y - \hat{y})^2]}{\partial w} &= 2 E_{x,y}[x y] + 2 w E_{x}[x^2]
+\end{align*}
+The optimal $w$ occurs when this expression is equal to $0$. Setting the left-hand side to $0$ and simplifying yields an expression for the optimal $w$.
+\begin{align*}
+    0 &= 2 E_{x,y}[x y] + 2 w E_{x}[x^2]\\
+    w &= \frac{E_{x,y}[x y]}{E_{x}[x^2]}
+\end{align*}
+
+\subsection{Part 2}
+We want to provide unbiased and consistent formulas to estimate $E_{x,y}[y x]$ and $E_x[x^2]$ given observed data $\{(x_n,y_n)\}_{n=1}^N$. We can use the sample mean for each expression, which is consistent and unbiased.
+\begin{equation*}
+    E_{x,y}[y x] = \frac{1}{N} \sum_{n=1}^N y_n x_n\ , \ E_x[x^2] = \frac{1}{N} \sum_{n=1}^N x_n^2
+\end{equation*}
+
+\subsection{Part 3}
+
+We want to compare how our expression for the optimal $w^*$ from Part 2 compares to the optimal $w^*$ from the textbook.
+Let us write the expression for the optimal $w^*$ from the textbook.
+\begin{equation*}
+    \vb{w}^* = (\vb{X}^T \vb{X})^{-1} \vb{X}^T \vb{y}
+\end{equation*}
+Since our data are tuples of scalars, we know that $\vb{X}$ is a $N \times 1$ vector and $\vb{y}$ is a $N \times 1$ vector. We can write $\vb{X}$ and $\vb{y}$ as follows.
+\begin{equation*}
+    \vb{X} =
+        \begin{bmatrix}
+            x_1\\
+            \vdots\\
+            x_N
+        \end{bmatrix}
+    \ , \
+    \vb{y} = 
+        \begin{bmatrix}
+            y_1\\
+            \vdots\\
+            y_N
+        \end{bmatrix}
+\end{equation*}
+We can write $\vb{X}^T \vb{X}$ as the following.
+\begin{equation*}
+    \vb{X}^T \vb{X} = x_1 x_1 + \cdots + x_N x_N = \sum_{n = 1}^N x_n^2
+\end{equation*}
+Then taking the inverse yields the expression below.
+\begin{equation*}
+    (\vb{X}^T \vb{X})^{-1} = \frac{1}{\sum_{n = 1}^N x_n^2}
+\end{equation*}
+We can also expand $\vb{X}^T \vb{y}$.
+\begin{equation*}
+    \vb{X}^T \vb{y} = x_1 y_1 + \cdots + x_N y_N = \sum_{n=1}^N x_n y_n
+\end{equation*}
+Finally, we sub these into the optimal expression for $w*$.
+\begin{equation*}
+    w^* = (\vb{X}^T \vb{X})^{-1} \vb{X}^T \vb{y} = \frac{\sum_{n=1}^N x_n y_n}{\sum_{n = 1}^N x_n^2}
+\end{equation*}
+This expression identically matches our expression that we obtained for the optimal $w^*$ in Part 1!
+
+\subsection{Part 4}
+Our derivations did not rely on the assumption that $x,y$ are jointly Gaussian. We did not use any of the properties of the Gaussian distribution in our derivations, we only used the properties of expectation, which are not specific to any particular distribution.
+
+\newpage
+
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% % Problem 4
+% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{problem}[Modeling Changes in Republicans and Sunspots, 15pts]
   
@@ -357,18 +543,68 @@ Given the quality of this fit, do you believe that the number of sunspots contro
 \end{enumerate}
 \end{framed}
 
+\newpage
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Problem 4}
+
+\subsection{Part 1}
+We want to plot the data and regression lines for the sets of basis functions (a) through (d) for year ($x$-axis) and number of republicans in the senate ($y$-axis), and include the residual sum of squares error.
+
+Running the code in \verb+T1_P4.py+ outputs the plots below for each basis function. The basis function is given in the title of each plot.
+\begin{figure}[h]
+\begin{tabular}{cc}
+    \includegraphics[width=0.5\textwidth]{4-1-a.png} & \includegraphics[width=0.5\textwidth]{4-1-b.png} \\
+    \includegraphics[width=0.5\textwidth]{4-1-c.png} & \includegraphics[width=0.5\textwidth]{4-1-d.png} \\
+\end{tabular}
+\end{figure}
+
+The residual sum of squares error for each basis function is in the title of each plot, but is also given below for convenience.
+\begin{itemize}
+    \item (a) error is $394.98038$
+    \item (b) error is $54.2731$
+    \item (c) error is $1082.80886$
+    \item (d) error is $39.00111$
+\end{itemize}
+
+\newpage
+
+\subsection{Part 2}
+We want to plot the data and regression lines for the sets of basis functions (a), (c), and (d) for the number of sunspots ($x$-axis) and the number of republicans in the senate ($y$-axis) for data from before 1985, and include the residual sum of squares error.
+Running the code in \verb+T1_P4.py+ outputs the plots below for each basis function. The basis function is given in the title of each plot.
+\begin{figure}[h]
+\begin{tabular}{cc}
+    \includegraphics[width=0.5\textwidth]{4-2-a.png} & \includegraphics[width=0.5\textwidth]{4-2-c.png} \\
+    \multicolumn{2}{c}{\includegraphics[width=0.5\textwidth]{4-2-d.png}}
+\end{tabular}
+\end{figure}
+
+The residual sum of squares error for each basis function is in the title of each plot, but is also given below for convenience.
+\begin{itemize}
+    \item (a) error is $351.22794$
+    \item (c) error is $375.10676$
+    \item (d) error is $0.0$
+\end{itemize}
+
+I think that basis function (a) provides the "best" fit. Basis function (c) is incredibly noisy and sporadic, causing large changes in the $y$-axis over small changes in the $x$-axis that do not seem to fit the data or be generalize-able at all. Basis function (d), despite having a squared error of $0$, looks like it over-fits the data to an extreme and looks like it is not generalize-able. Basis function (a), although having fairly large square error, looks like it fits the data set as well as possible without over-fitting.
+
+No, I do not believe the number of sunspots controls the number of republicans in the senate. The fit of (a), while the best of the three basis functions, is poor, and so I would argue that the number of sunspots does not control the number of republicans in the senate.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Name and Calibration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection*{Name}
+\subsection*{Rob Walker}
 
 \subsection*{Collaborators and Resources}
 Whom did you work with, and did you use any resources beyond cs181-textbook and your notes?
 
+James Kitch and Julian Schmitt. When working on Problem 1.5 (bonus), I referenced this article: https://www.geeksforgeeks.org/how-to-implement-a-gradient-descent-in-python-to-find-a-local-minimum/ when writing my gradient descent in Python.
+
 \subsection*{Calibration}
 Approximately how long did this homework take you to complete (in hours)? 
+20 hours
 
 \end{document}
