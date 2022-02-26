@@ -20,17 +20,17 @@ def basis1(x):
     return np.stack([np.ones(len(x)), x], axis=1)
 
 def basis2(x):
-    return np.stack([np.ones(len(x)), x, np.power(x, 2)], axis=1)
+    return np.stack([np.ones(len(x)), x, x ** 2], axis=1)
 
 def basis3(x):
-    return np.stack([np.ones(len(x)), *[np.power(x, i) for i in range(1,6)]], axis=1)
+    return np.stack([np.ones(len(x)), *[x ** i for i in range(1,6)]], axis=1)
 
 class LogisticRegressor:
     def __init__(self, eta, runs):
         # Your code here: initialize other variables here
         self.eta = eta
         self.runs = runs
-
+    
     # Optimize w using gradient descent
     def fit(self, x, y, w_init=None):
         # Keep this if case for the autograder
@@ -38,14 +38,16 @@ class LogisticRegressor:
             self.W = w_init
         else:
             self.W = np.random.rand(x.shape[1], 1)
-        
-        N = len(x)
-        for _ in range(0, self.runs):
-            self.W = self.W - self.eta * np.dot(x.T, (self.predict(x) - y)) / N
 
-    # Fix this method!
+        N = len(y)
+        for _ in range(0, self.runs):
+            self.W = self.W - self.eta * np.dot((self.predict(x) - y).T, x) / N
+
     def predict(self, x):
-        return 1 / (1 + np.exp(-1 * np.dot(x, self.W)))
+        return self.__sigmoid(np.dot(x, self.W))
+
+    def __sigmoid(self, z):
+        return (1 / (1 + np.exp(-1 * z)))
 
 # Function to visualize prediction lines
 # Takes as input last_x, last_y, [list of models], basis function, title
@@ -83,7 +85,6 @@ def visualize_prediction_lines(last_x, last_y, models, basis, title):
             plt.plot(X_pred, Y_hat, linewidth=.3)
         else:
             plt.plot(X_pred, Y_hat, 'purple', linewidth=3)
-
     # Mean / expectation of learned models over all datasets
     plt.plot(X_pred, np.mean(Y_hats, axis=0), 'k', linewidth=5)
 
@@ -106,10 +107,10 @@ if __name__ == "__main__":
     # DO NOT CHANGE THE SEED!
     np.random.seed(1738)
     eta = 0.001
-    runs = 10000
+    runs = 1
     N = 30
 
-    # Plot each basis with all 10 models on each plot
+    # Make plot for each basis with all 10 models on each plot
     for b, t in [(basis1, "basis1"), (basis2, "basis2"), (basis3, "basis3")]:
         all_models = []
         for _ in range(10):

@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 
@@ -12,26 +13,53 @@ class LogisticRegression:
     def __init__(self, eta, lam):
         self.eta = eta
         self.lam = lam
+        self.runs = 200000
+        self.loss = np.zeros(self.runs)
 
-    # Just to show how to make 'private' methods
-    def __dummyPrivateMethod(self, input):
-        return None
-
-    # TODO: Implement this method!
     def fit(self, X, y):
-        return
+        # Process X, y
+        X = np.hstack([np.ones((len(X), 1)), X])
+        y = self.__oneHotEncode(y)
 
-    # TODO: Implement this method!
+        # Guess weights
+        self.W = np.random.rand(3, 3)
+
+        # Gradient descent
+        N = len(X)
+        for i in range(0, self.runs):
+            yhat = self.__predict(X)
+            gradient = X.T@(yhat - y) / N + 2 * self.lam * self.W
+            self.loss[i] = -1 * np.trace(np.dot(np.log(yhat), y.T))
+            self.W = self.W - self.eta * gradient
+
     def predict(self, X_pred):
-        # The code in this method should be removed and replaced! We included it
-        # just so that the distribution code is runnable and produces a
-        # (currently meaningless) visualization.
-        preds = []
-        for x in X_pred:
-            z = np.cos(x ** 2).sum()
-            preds.append(1 + np.sign(z) * (np.abs(z) > 0.3))
-        return np.array(preds)
+        # Bias trick
+        X_pred = np.hstack([np.ones((len(X_pred), 1)), X_pred])
+
+        # Make prediction
+        return np.argmax(self.__predict(X_pred), axis=1)
+
+
+    def __predict(self, X):
+        return self.__softmax(X@self.W)
+    
+    def __softmax(self, x):
+        return np.exp(x) / np.sum(np.exp(x), axis=1)[:, None]
+
+    def __oneHotEncode(self, v):
+        o = np.zeros((v.size, v.max()+1))
+        o[np.arange(v.size), v] = 1
+        return o
 
     # TODO: Implement this method!
     def visualize_loss(self, output_file, show_charts=False):
-        pass
+        if show_charts:
+            title = output_file + f'_eta{self.eta}_lam{self.lam}'
+            plt.figure()
+            plt.title(title)
+            plt.xlabel('Runs')
+            plt.ylabel('Cross-entropy loss')
+            x = np.arange(1, self.runs+1)
+            plt.plot(x, self.loss)
+            plt.savefig(title + '.png')
+            plt.show()
