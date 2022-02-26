@@ -24,7 +24,7 @@ class LogisticRegression:
         # Guess weights
         self.W = np.random.rand(3, 3)
 
-        # Gradient descent
+        # Optimize weights via gradient descent
         N = len(X)
         for i in range(0, self.runs):
             yhat = self.__predict(X)
@@ -33,12 +33,10 @@ class LogisticRegression:
             self.W = self.W - self.eta * gradient
 
     def predict(self, X_pred):
-        # Bias trick
+        # Add bias term
         X_pred = np.hstack([np.ones((len(X_pred), 1)), X_pred])
 
-        # Make prediction
         return np.argmax(self.__predict(X_pred), axis=1)
-
 
     def __predict(self, X):
         return self.__softmax(X@self.W)
@@ -51,7 +49,6 @@ class LogisticRegression:
         o[np.arange(v.size), v] = 1
         return o
 
-    # TODO: Implement this method!
     def visualize_loss(self, output_file, show_charts=False):
         if show_charts:
             title = output_file + f'_eta{self.eta}_lam{self.lam}'

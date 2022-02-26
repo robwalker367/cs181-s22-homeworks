@@ -17,7 +17,6 @@ class GaussianGenerativeModel:
         self.covar = None
         self.priors = None
 
-    # Implement this method!
     def fit(self, X, y):
         # Calculate class frequencies and optimal means
         freqs = np.zeros(self.K)
@@ -32,7 +31,7 @@ class GaussianGenerativeModel:
             means[klass] /= freqs[klass]
         self.means = means
 
-        # Calculate covariance matrix
+        # Calculate covariance matrix / matrices
         covars = [np.zeros((X.shape[1], X.shape[1])) for _ in range(self.K)]
         covar = np.zeros((X.shape[1], X.shape[1]))
         for i in range(len(X)):
@@ -42,7 +41,6 @@ class GaussianGenerativeModel:
                     c = np.dot(X[i].reshape(2,1) - means[j].reshape(2,1), (X[i].reshape(2,1) - means[k].reshape(2,1)).T)
                     covars[klass] += c
                     covar += c
-                
         for k in range(self.K):
             covars[k] = covars[k] / freqs[k]
         self.covars = covars

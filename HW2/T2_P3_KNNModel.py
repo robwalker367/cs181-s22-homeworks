@@ -17,7 +17,10 @@ class KNNModel:
         data = list(map(lambda x : list(x), data))
         yhats = []
         for xp in X_pred:
+            # Find k closest points
             k_closest = sorted(data, key=lambda x2, x1=xp : (self.__distance(x1, x2), x2))[0:self.K]
+
+            # Find most common point
             yhat = np.argmax(np.bincount(list(map(lambda y : y[2], k_closest))))
             yhats.append(yhat)
         return np.array(yhats)
