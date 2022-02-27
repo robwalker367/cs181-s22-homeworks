@@ -15,11 +15,11 @@ from T2_P3_KNNModel import KNNModel
 # adjust these as you try to find the best fit for each classifier.
 
 # Logistic Regression hyperparameters
-eta = 0.001 # Learning rate
+eta = 0.01  # Learning rate
 lam = 0.001 # Lambda for regularization
 
 # Whether or not you want the plots to be displayed
-show_charts = True
+show_charts = False
 
 np.random.seed(1738)
 
@@ -93,8 +93,8 @@ visualize_boundary(nb2, X, y, 'generative_result_shared_covariances')
 print('Shared Covariance negative log-likelihood: {}\n'
       .format(nb2.negative_log_likelihood(X, y)))
 
+
 lr = LogisticRegression(eta=eta, lam=lam)
-lr.fit(X, y)
 lr.visualize_loss('logistic_regression_loss', show_charts=show_charts)
 visualize_boundary(lr, X, y, 'logistic_regression_result')
 

@@ -50,6 +50,7 @@ class LogisticRegression:
         return o
 
     def visualize_loss(self, output_file, show_charts=False):
+        print(self.loss[-1])
         if show_charts:
             title = output_file + f'_eta{self.eta}_lam{self.lam}'
             plt.figure()
