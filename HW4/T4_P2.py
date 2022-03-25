@@ -8,20 +8,38 @@ import matplotlib.pyplot as plt
 small_dataset = np.load("data/small_dataset.npy")
 large_dataset = np.load("data/large_dataset.npy")
 
+np.random.seed(2)
+
 # NOTE: You may need to add more helper functions to these classes
 class KMeans(object):
     # K is the K in KMeans
     def __init__(self, K):
         self.K = K
+        self.means = None
+        self.runs = 10
+        self.assignments = None
 
     # X is a (N x 784) array since the dimension of each image is 28x28.
     def fit(self, X):
-        pass
+        # Initialize cluster assignments and random centers
+        self.assignments = np.zeros(X.shape[0])
+        self.means = np.random.randn(self.K, X.shape[1])
+
+        for _ in range(self.runs):
+            # Assign datapoints to nearest cluster
+            for i, x in enumerate(X):
+                self.assignments[i] = np.argmin(np.linalg.norm(x - self.means, axis=1) ** 2)
+
+            # Update cluster means
+            for k in range(self.K):
+                clusteroid = X[self.assignments == k]
+                if clusteroid.size != 0:
+                    self.means[k] = clusteroid.mean(axis=0)
+        return
 
     # This should return the arrays for K images. Each image should represent the mean of each of the fitted clusters.
     def get_mean_images(self):
-        # TODO: change this!
-        return small_dataset[:self.K]
+        return self.means
 
 class HAC(object):
     def __init__(self, linkage):
@@ -64,32 +82,32 @@ def make_mean_image_plot(data, standardized=False):
 make_mean_image_plot(large_dataset, False)
 
 # ~~ Part 3 ~~
-# TODO: Change this line! standardize large_dataset and store the result in large_dataset_standardized
-large_dataset_standardized = large_dataset
-make_mean_image_plot(large_dataset_standardized, True)
+# # TODO: Change this line! standardize large_dataset and store the result in large_dataset_standardized
+# large_dataset_standardized = large_dataset
+# make_mean_image_plot(large_dataset_standardized, True)
 
-# Plotting code for part 4
-LINKAGES = [ 'max', 'min', 'centroid' ]
-n_clusters = 10
+# # Plotting code for part 4
+# LINKAGES = [ 'max', 'min', 'centroid' ]
+# n_clusters = 10
 
-fig = plt.figure(figsize=(10,10))
-plt.suptitle("HAC mean images with max, min, and centroid linkages")
-for l_idx, l in enumerate(LINKAGES):
-    # Fit HAC
-    hac = HAC(l)
-    hac.fit(small_dataset)
-    mean_images = hac.get_mean_images(n_clusters)
-    # Make plot
-    for m_idx in range(mean_images.shape[0]):
-        m = mean_images[m_idx]
-        ax = fig.add_subplot(n_clusters, len(LINKAGES), l_idx + m_idx*len(LINKAGES) + 1)
-        plt.setp(ax.get_xticklabels(), visible=False)
-        plt.setp(ax.get_yticklabels(), visible=False)
-        ax.tick_params(axis='both', which='both', length=0)
-        if m_idx == 0: plt.title(l)
-        if l_idx == 0: ax.set_ylabel('Class '+str(m_idx), rotation=90)
-        plt.imshow(m.reshape(28,28), cmap='Greys_r')
-plt.show()
+# fig = plt.figure(figsize=(10,10))
+# plt.suptitle("HAC mean images with max, min, and centroid linkages")
+# for l_idx, l in enumerate(LINKAGES):
+#     # Fit HAC
+#     hac = HAC(l)
+#     hac.fit(small_dataset)
+#     mean_images = hac.get_mean_images(n_clusters)
+#     # Make plot
+#     for m_idx in range(mean_images.shape[0]):
+#         m = mean_images[m_idx]
+#         ax = fig.add_subplot(n_clusters, len(LINKAGES), l_idx + m_idx*len(LINKAGES) + 1)
+#         plt.setp(ax.get_xticklabels(), visible=False)
+#         plt.setp(ax.get_yticklabels(), visible=False)
+#         ax.tick_params(axis='both', which='both', length=0)
+#         if m_idx == 0: plt.title(l)
+#         if l_idx == 0: ax.set_ylabel('Class '+str(m_idx), rotation=90)
+#         plt.imshow(m.reshape(28,28), cmap='Greys_r')
+# plt.show()
 
 # TODO: Write plotting code for part 5
 
