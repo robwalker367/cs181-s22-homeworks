@@ -18,6 +18,9 @@
 \usepackage{todonotes}
 \usepackage{listings}
 \usepackage{common}
+\usepackage{physics}
+\usepackage{amsmath}
+\usepackage{pythonhighlight}
 
 \usepackage[mmddyyyy,hhmmss]{datetime}
 
@@ -104,7 +107,7 @@ the questions below when composing your answers, and to justify each step.
   met with equality---for these candidate points.
 
 \item Suppose that we had decided to use a different feature mapping
-    $\bphi'(x) = (x, -4x^2 + \frac{1}{2}x^4 )$.  Does
+    $\bphi'(x) = (x, -\frac{31}{12}x^2 + \frac{7}{12}x^4 )$.  Does
     this feature mapping still admit a separable solution?  How does
     its margin compare to the margin in the previous parts?  Based on
     this, which set of features might you prefer and why? 
@@ -113,8 +116,96 @@ the questions below when composing your answers, and to justify each step.
 
 \end{problem}
 
+\newpage
 \subsection*{Solution}
 
+\subsection*{1.1}
+
+We want to plot the transformed training data and draw the optimal decision boundary of the max margin classifier.
+
+\includegraphics{plots/1-1.png}
+
+\subsection*{1.2}
+
+We want to determine the margin achieved by the optimal decision boundary found in Part 1. We know that the margin is the minimum distance between the decision boundary and any data point. As we can see, the distance between the decision boundary and the nearest data point is $1$, and so the \boxed{\text{margin is }$1$}.
+
+\subsection*{1.3}
+
+As we can see from 1.1, the decision boundary is horizontal line. So a unit vector that is orthogonal to the decision boundary is $\boxed{\vb{u} =[0, 1]}$.
+
+\subsection*{1.4}
+
+We want to give an expression for all possible $(\vb{w}, w_0)$ that define the optimal decision boundary from 1.1. From 1.3 we know that $\vb{w}$ must be some scalar of $\vb{u} = [0, 1]$, so $\textbf{w} = c \vb{u}$. We also know that the boundary is where the discriminant is equal to $0$. Using these facts, we can manipulate the expression from the discriminant.
+\begin{align*}
+    h(\bphi(x); \vb{w}, w_0) &= \vb{w}^T \bphi(x) + w_0 \\
+    0 &= c \vb{u}^T \bphi(x) + w_0 \\
+    0 &= c u_1 \phi(x)_1 + c u_2 \phi(x)_2 + w_0 \\
+    0 &= c (0) \phi(x)_1 + c (1) \phi(x)_2 + w_0 \\
+    c \bphi(x)_2 &= - w_0 \\
+\end{align*}
+From 1.3 we know that the optimal decision boundary occurs when $\bphi(x)_2 = -1$. And so we have the following expression for $c$
+\begin{align*}
+    c(-1) &= -w_0 \\
+    c &= w_0
+\end{align*}
+And so since $\textbf{w} = c \vb{u}$ then the optimal decision boundary occurs when $\boxed{\textbf{w} = [0, w_0]}$
+
+\subsection*{1.5}
+
+We want to find the optimal solution $\vb{w}$ using our answers so far. From 1.2 we know that the optimal margin is $1$ and that $\vb{w} = [0, w_0]$. Let us manipulate the training problem.
+\begin{align*}
+    \min_{\vb{w}, w_0} \frac{1}{2} || \vb{w} ||^2_2 = \min_{\vb{w}, w_0} \frac{1}{2} \vb{w}^T \vb{w} = \min_{\vb{w}, w_0} \frac{1}{2} w_0^2
+\end{align*}
+By examining the data we see that the only possible $\vb{w}$ that could satisfy the constraints is $\boxed{\vb{w} = [0, 1]}$, which is therefore optimal.
+
+\subsection*{1.6}
+We want to find the corresponding optimal value $w_0$ for $\vb{w}$ from Part 1.5. We know from 1.5 that $\vb{w} = [0, 1]$. From 1.4 we know that $\vb{w} = \begin{bmatrix}0 \\ w_0\end{bmatrix}$ and so $w_0 = 1$.
+
+Now we want to substitute in these optimal values and write out the discriminant function in terms of $\vb{w}$.
+\begin{align*}
+    h(\bphi(x); \vb{w}, w_0) &= \vb{w}^T \bphi(x) + w_0 \\
+    h(\bphi(x); \vb{w}, w_0) &= [0, 1]^T \bphi(x) + 1 \\
+    h(\bphi(x); \vb{w}, w_0) &= -\frac{8}{3} x^2 + \frac{2}{3} x^4 + 1
+\end{align*}
+
+\subsection*{1.7}
+
+The points that could possibly be point vectors of the classifier are $\{ (-2, 1), (-1, -1), (0, 1), (1, -1), (2, 1)$. Let us confirm that the 1.6 solution meets the equality below for these candidate points.
+\begin{equation*}
+    y_i (\vb{w}^T \bphi(x_i) + w_0) \geq 1, \forall i \in \{1, \dots, n\}
+\end{equation*}
+We can verify this using the code below.
+\begin{python}
+support_vectors = np.array([
+    [-2, 1],
+    [-1, -1],
+    [0, 1],
+    [1, -1],
+    [2, 1]
+])
+X, y = support_vectors[:,0], support_vectors[:,1]
+
+w, w0 = np.array([[0],[1]]), 1
+
+def basis(x):
+    return np.array([x, (-8 / 3) * (x ** 2) + (2 / 3) * (x ** 4)])
+
+def equality(x, y):
+    return (y * (np.dot(w.T, basis(x)) + w0)) == 1
+
+np.all([equality(X[i], y[i]) for i in range(y.size)])
+\end{python}
+This code returns true and so we know that all of the support vectors make the constraints above tight.
+
+\subsection*{1.8}
+
+Supposing we had used a different feature mapping $\bphi'(x) = (x, -4 x^2 + \frac{1}{2} x^4)$, the feature mapping would not admit a separable solution. We can see this in the plot below.
+
+\includegraphics{plots/1-8.png}
+
+Thus we would not be able to find a suitable margin, and so we would prefer the first set of features because it makes the data separable.
+
+\newpage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Problem 2
@@ -208,7 +299,78 @@ The code in \texttt{T4\_P2.py} loads the images into your environment into two a
 \end{framed}
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
 \subsection*{Solution}
+
+\subsection*{2.1}
+
+We want to plot the K-means objective function as a function of iterations and verify that it never increases.
+
+\includegraphics[scale=0.5]{plots/kmeans-loss.png}
+
+As we can see, it never increases.
+
+\newpage
+\subsection*{2.2}
+We want to show the mean image for each cluster of K-means with $K = 10$ and $3$ random restarts. This is shown in the plot below.
+
+\includegraphics[scale=0.5]{plots/kmeans.png}
+
+\newpage
+\subsection*{2.3}
+We want to repeat 2.2 but standardize the data before running K-means.
+
+\includegraphics[scale=0.5]{plots/kmeans-standardized.png}
+
+The centroids are quite different from the non-standardized K-means from 2.2. In the standardized centroids, the edges of each mean image are much lighter and more grey, whereas only the centers of the images show a contrast between white and black. I think the higher contrast in the center is due to the tendency for the centers to have higher variance than the edges: this causes them to still be either starkly white are black, as opposed to the edges which remain a more neutral grey.
+
+\newpage
+\subsection*{2.4}
+We want to implement HAC for min, max, and centroid-based linkages, then display the mean image for 10 clusters on a single plot.
+
+\includegraphics[scale=0.5]{plots/hac.png}
+
+The cluster means for centroid and min linkages are much crisper than that of our k-means for the most part, with only one of the images in the min and centroid linkage being quite blurry. However, the max linkage looks fairly similar to the k-means linkage in terms of crispness / bluriness.
+
+We only run HAC once because it is deterministic and so there is no need to run it multiple times because it would always produce the same result.
+
+\newpage
+\subsection*{2.5}
+
+We want to plot the number of images in each cluster for HAC with max, min, and centroid-based linkages, as well as a run of our k-means.
+
+\includegraphics[scale=0.5]{plots/hacmax-clusters.png} \
+\includegraphics[scale=0.5]{plots/hacmin-clusters.png}
+
+\includegraphics[scale=0.5]{plots/haccentroid-clusters.png} \
+\includegraphics[scale=0.44]{plots/kmeans-clusters.png}
+
+Intuitively, this suggests that min linkage tends to have one cluster with many perhaps less similar images that ``snake'' through the data (since the min linkage takes the closest cluster at each step), whereas the max linkage tends to have more evenly divided clusters that are perhaps more ``blobby'' and similar within each cluster.
+
+This helps explain the crispness and blurriness of some of the clusters. For the min and centroid linkage, most clusters only have a few very similar images, while one image takes on many images and thus most of the variation in the images. The max linkage is more similar to k-means because the max linkage has more uniform clusters and so is blurrier.
+
+\newpage
+\subsection*{2.6}
+We want to plot a confusion matrix between each pair of HAC min/max/centroid and K-means with $K = 10$ models.
+
+\includegraphics[scale=0.5]{plots/kmeans-haccentroid.png} \
+\includegraphics[scale=0.5]{plots/kmeans-hacmax.png}
+
+\includegraphics[scale=0.5]{plots/kmeans-hacmin.png} \
+\includegraphics[scale=0.5]{plots/hacmax-haccentroid.png}
+
+\includegraphics[scale=0.5]{plots/hacmax-hacmin.png} \
+\includegraphics[scale=0.5]{plots/hacmin-haccentroid.png}
+
+The HAC with max linkage is closest to k-means. This may be because the clusters are more uniformly sized with the max-linkage and so there is a higher likelihood of overlap between the clusters in k-means. Moreover, this may be because the max linkage has a more similar effect to the k-means objective function. A max linkage effectively ``punishes'' clusters that are far apart more heavily than min and centroid linkages, since it takes the smallest maximum distance between clusters: if there are two points that are very far apart between the clusters, then HAC will not merge those two clusters unless it absolutely must. This is similar to k-means, which uses a squared distance to assign points to the means. This similar effect causes more overlap between the clusters in HAC with max linkage and k-means and so a more similar confusion matrix.
+
+\newpage
+\subsection*{2.7}
+
+I think that computing the confusions for each clustering to the true digit labels is not a reasonable evaluation metric for the clustering. Since clustering is an unsupervised learning technique, its primary aim is to explore underlying trends and structures in the data as opposed to supervised learning which focuses on predicting the label of a new data given previous data. So using the true digit labels would not be aligned with the primary aim of clustering. Additionally, since clustering focuses on grouping data that looks similar (based off a distance function), using this metric ignores possible complications in the data. For example, suppose that all images of $4$'s and $9$'s look quite similar in the MNIST data, but there are two styles to draw $1$'s that are very different. This could cause a clustering model to group $4$'s and $9$'s together and the different styles of $1$'s in different clusters, since the distance between the $4$ and $9$ images is smaller than the distance between the different styles of $1$. This is expected behavior of the clustering model, but would cause the metric to perform very badly in an unreasonable way. Thus this metric is not reasonable.
+
 
 \newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -248,17 +410,28 @@ Draw a causal chain that resulted in this outcome and circle the choice points t
 \end{problem}
 
 \newpage
+\subsection*{Solution}
+For this problem, I chose the game \url{http://www.survivalofthebestfit.com/game} and to create a causal chain for some of its outcomes.
+
+\includegraphics[scale=0.5]{causal-chain.png}
+
+I think that the two most morally relevant choice points are proceeding to automate hiring, and to do nothing after noticing deficiencies with the model. These are highlighted in red. I think that automating hiring is a backward-looking responsibility: I should have raised concerns and not made this decision. In many ways, this decision was the primary enabler for the outcome. I think that not shutting down the model is both a backward and a forward looking responsibility: while I should have shut down the model earlier, I have a responsibility to shut it down now, and put the cat back in the bag.
+
+\newpage
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Name and Calibration
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Name}
-% ASK IF THEY CAME TO OFFICE HOURS
+
 \subsection*{Collaborators and Resources}
 Whom did you work with, and did you use any resources beyond cs181-textbook and your notes?\\
+James Kitch, Julian Schmitt
 \\
 Did you attend office hours for help with this homework?
+No.
 
 \subsection*{Calibration}
 Approximately how long did this homework take you to complete (in hours)? 
+20
 
 \end{document}
