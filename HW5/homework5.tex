@@ -25,6 +25,8 @@
 \usepackage{xifthen}
 \usepackage{pythonhighlight}
 \usepackage{soul}
+\usepackage{physics}
+\newcommand{\E}{\mathbb{E}}
 
 \usepackage[mmddyyyy,hhmmss]{datetime}
 
@@ -141,49 +143,154 @@ Using the~$\boldq_n$ estimates from the Expectation Step, derive an update for m
 \end{framed}
 
 \newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \subsection*{Solution}
 
-\begin{enumerate}
-  \item
-  \item 
-  \item 
-  \item 
-    \begin{enumerate}
-      \item 
-      \item 
-      \item 
-    \end{enumerate}
-  \item 
-  \item 
-    Plot:
+\subsection*{Problem 1.1}
 
-    % \includegraphics[width=\linewidth]{p1}
+We want to expand the data likelihood to include the sums over observations $x_n$ and marginalize out the latents $\vb{z}_n$.
+\begin{align*}
+    p(\{ x_n \} ; \btheta, \{ \beta_k \}) &= \prod_{n=1}^N \sum_{k=1}^K p(x_n, \vb{z}_n; \btheta, \{ \beta_k \}) \\
+    \log(p(\{ x_n \} ; \btheta, \{ \beta_k \})) &= \sum_{n=1}^N \log(\sum_{k=1}^K p(x_n, \vb{z}_n ; \btheta, \{ \beta_k) \}) \\
+    &= \sum_{n=1}^N \log(\sum_{k=1}^K p(x_n | \vb{z}_n ; \btheta, \{ \beta_k \}) p(\vb{z}_n | \btheta, \{ \beta_k \})) \\
+    &= \sum_{n=1}^N \log(\sum_{k=1}^K \text{Gamma}(x_n | \alpha, \beta_k) \theta_k)
+\end{align*}
+Optimizing this likelihood is directly intractable because of the summation within the $\log$.
 
-    Code:
+\subsection*{Problem 1.2}
 
-    \begin{python}
+We want to write out the negative complete data log likelihood and apply the power trick to simplify our expression using indicator elements $z_{n k}$.
+\begin{align*}
+    p(\{x_n\}, \{ \vb{z}_n \} ; \btheta, \{ \beta_k \}) &= \prod_{n=1}^N p(x_n, \vb{z}_n ; \btheta, \{ \beta_k \}) \\
+    &= \prod_{n=1}^N p(x_n | \vb{z}_n; \{ \beta_k \}) p(\vb{z}_n ; \btheta)\\
+    &= \prod_{n=1}^N \prod_{k=1}^K \left(\text{Gamma}(x_n | \alpha, \beta_k) \theta_k \right)^{z_{n k}}\\
+    -\log p(\{x_n\}, \{ \vb{z}_n \} ; \btheta, \{ \beta_k \}) &= -\sum_{n=1}^N \sum_{k=1}^K z_{n k} \log \text{Gamma}(x_n | \alpha, \beta_k) + z_{n k} \log \theta_k
+\end{align*}
+And so we have written the complete negative log likelihood.
+
+\subsection*{Problem 1.3}
+
+We want to write down and simplify the expression for $\vb{q}_n$. Let us work with a single element $q_{n k}$ of $\vb{q}_n$ and then assemble these elements into a vector at the end.
+\begin{align*}
+    q_{n k} &= p(\vb{z}_n = C_k | x_n ; \btheta, \beta_k) \\
+    &= p(x_n | \vb{z_n} = C_k ; \beta_k) p(\vb{z}_n = C_k ; \btheta) \\
+    &= \theta_k \text{Gamma}(x_n | \alpha, \beta_k)
+\end{align*}
+We also need to make sure to normalize the elements of $\vb{q}_n$ since we know that $\sum_{k=1}^K q_{n k} = 1$. And so we have the following expression for $\vb{q}_n$.
+\begin{equation*}
+    \vb{q}_n = \begin{bmatrix}
+        \theta_1 \text{Gamma}(x_n | \alpha, \beta_1) / \left(\sum_{k=1}^K \theta_k \text{Gamma}(x_n | \alpha, \beta_k)\right) \\
+        \vdots \\
+        \theta_K \text{Gamma}(x_n | \alpha, \beta_K) / \left(\sum_{k=1}^K \theta_k \text{Gamma}(x_n | \alpha, \beta_k)\right)
+    \end{bmatrix}
+\end{equation*}
+
+\subsection*{Problem 1.4(a)}
+
+We want to derive an expression for the expected complete data log likelihood using $\vb{q}_n$.
+\begin{align*}
+    \E_{\{x_n\}, \{\vb{z}_n\}}[\log p(\{x_n\}, \{ \vb{z}_n \} ; \btheta, \{ \beta_k \})] &= \E_{\{x_n\}, \{\vb{z}_n\}}\left[\sum_{n=1}^N \log\left(p(x_n | \vb{z}_n; \{ \beta_k \}) p(\vb{z}_n ; \btheta, \{\beta_k\})\right)\right]\\
+    &= \sum_{n=1}^N \E_{x_n | \vb{z}_n}\left[ \log p(x_n | \vb{z}_n ; \{\beta_k\}) + \log p(\vb{z}_n ; \btheta, \{\beta_k \} \}) \right] \\
+    &= \sum_{n=1}^N \sum_{k=1}^K p(\vb{z}_n = C_k | x_n) \left[\log p(x_n | \vb{z}_n ; \{\beta_k\}) + \log p(\vb{z}_n ; \btheta, \{\beta_k \} \})\right] \\
+    &= \sum_{n=1}^N \sum_{k=1}^K q_{n k} \log p(x_n | \vb{z}_n ; \{\beta_k\}) + q_{n k} \log p(\vb{z}_n ; \btheta, \{\beta_k \} \})
+\end{align*}
+This uses $q_{n k} = p(\vb{z}_n = C_k | x_n)$ to simplify notation. And so we are done.
+
+\subsection*{Problem 1.4(b)}
+We want to find an expression for $\btheta$ that maximizes this expected complete data log likelihood. We will use Lagrange multipliers and enforce the constraint $\sum_{i=1}^K \theta_k = 1$.
+
+Let us set up a Lagrange multiplier function $L$.
+\begin{equation*}
+    L(\{x_n\}, \lambda) = \left[\sum_{n=1}^N \sum_{k=1}^K q_{n k} \log p(x_n | \vb{z}_n ; \{\beta_k\}) + q_{n k} \log p(\vb{z}_n ; \btheta, \{\beta_k \} \})\right] - \lambda\left(\left[\sum_{k=1}^K\theta_k\right] - 1 \right)
+\end{equation*}
+Now take the derivative with respect to $\lambda$, set the LHS to $0$, and rearrange.
+\begin{align*}
+    \nabla_{\lambda}L(\{x_n\}, \lambda) &= 1 - \sum_{k=1}^K \theta_k \\
+    \sum_{k=1}^K \theta_k &= 1
+\end{align*}
+Then we take the derivative with respect to $\theta_k$.
+\begin{align*}
+    \nabla_{\theta_k}L(\{x_n\}, \lambda) &= \left[ \sum_{n=1}^N \frac{q_{n k}}{\theta_k} \right] - \lambda\\
+    \lambda &= \sum_{n=1}^N \frac{q_{n k}}{\theta_k}\\
+    \theta_k &= \frac{\sum_{n=1}^N q_{n k}}{\lambda}
+\end{align*}
+Subbing this into our expression above, we get the following value of $\lambda$.
+\begin{align*}
+    \sum_{k=1}^K \theta_k &= 1\\
+    \sum_{k=1}^K \frac{\sum_{n=1}^N q_{n k}}{\lambda} &= 1\\
+    \lambda &= \sum_{k=1}^K \sum_{n=1}^N q_{n k}\\
+    \lambda &= N
+\end{align*}
+Finally, we sub this into our expression for $\theta_k$.
+\begin{align*}
+    \theta_k &= \frac{\sum_{n=1}^N q_{n k}}{\lambda}\\
+    \theta_k &= \frac{\sum_{n=1}^N q_{n k}}{N}
+\end{align*}
+And so we have found an expression for $\btheta$ (a vector of these $\theta_k$ for each $k$) that maximizes the expected complete data log likelihood.
+
+This expression makes sense because it is essentially the average probability for each class across the data set. Since $\theta_k$ is the probability for a given class because our latent variables are categorical, then this is appropriate.
+
+\subsection*{Problem 1.4(c)}
+
+We want to find an expression for $\beta_k$ that maximizes the expected complete data log likelihood. Let $E$ be our complete data log likelihood.
+\begin{align*}
+    E &= \E_{\{x_n\}, \{\vb{z}_n\}}[\log p(\{x_n\}, \{ \vb{z}_n \} ; \btheta, \{ \beta_k \})]\\
+    &= \sum_{n=1}^N \sum_{k=1}^K q_{n k} \log \text{Gamma}(x_n | \alpha, \beta_k) + q_{n k} \log \theta_k \\
+    \nabla_{\beta_k}E &= \sum_{n=1}^N q_{n k} \left[\frac{\nabla_{\beta_k} \text{Gamma}(x_n | \alpha, \beta_k)}{\text{Gamma}(x_n | \alpha, \beta_k)}  \right]
+\end{align*}
+We use the product rule to differentiate the Gamma PDF.
+\begin{align*}
+    \text{Gamma}(x_n | \alpha, \beta_k) &= \frac{x_n^{\alpha - 1}}{\Gamma(\alpha)}\beta_k^{\alpha}e^{-\beta_k x_n}\\
+    \nabla_{\beta_k}\text{Gamma}(x_n | \alpha, \beta_k) &= \frac{x_n^{\alpha - 1}}{\Gamma(\alpha)} \left[ \alpha \beta_k^{\alpha - 1} e^{-\beta_k x_n} - x \beta_k^{\alpha} e^{- \beta_k x_n} \right]\\
+    &= \frac{x_n^{\alpha - 1}}{\Gamma(\alpha)} \left[ \beta_k^{\alpha - 1}e^{-\beta_k x_n}(\alpha - x_n \beta_k) \right]
+\end{align*}
+Then we can plug this back in, simplify, set the LHS to 0, and solve for $\beta_k$.
+\begin{align*}
+    \nabla_{\beta_k}E &= \sum_{n=1}^N q_{n k} \left[\frac{\beta_k^{\alpha - 1}e^{-\beta_k x_n}(\alpha - x_n \beta_k)}{\beta_k^{\alpha} e^{-\beta_k x}}\right]\\
+    &= \sum_{n=1}^N q_{n k} \left[ \frac{\alpha - x_n \beta_k}{\beta_k}\right]\\
+    &= \sum_{n=1}^N q_{n k} \left[ \frac{\alpha}{\beta_k} - x_n\right]\\
+    0 &= \sum_{n=1}^N q_{n k} \frac{\alpha}{\beta_k} - \sum_{n=1}^N q_{n k} x_n \\
+    \sum_{n=1}^N q_{n k} x_n &= \frac{\alpha}{\beta_k} \sum_{n=1}^N q_{n k} \\
+    \beta_k &= \frac{\alpha \sum_{n=1}^N q_{n k}}{\sum_{n=1}^N q_{n k} x_n}
+\end{align*}
+To see that this is intuitive, note that we can rearrange the equation above to be in the form $\frac{\sum_{n=1}^N q_{n k} x_n}{\sum_{n=1}^N q_{n k} q_{n k}} = \alpha / \beta_k$. We know that the mean of a Gamma distribution is given by $\alpha / \beta$. And so the above value of $\beta_k$ is the value corresponding to the most likely mean of the data for our (where each data point is weighted by the certainty of a data point $x_n$ being a member of class $C_k$).
+
+\subsection*{Problem 1.5}
+If we are provided the true components $\vb{z}_n$ for each observation and we were inverting the generative model, then we could reuse all of our derivations to estimate the model parameters except those from the expectation step. The expectation step attempts to find a soft assignment of the data to each class; however, if we are given $\vb{z}_n$, then there is no need to complete this step because we already know the assignment. We may still reuse the derivations in the maximization step since these will find the most likely model for our data.
+
+\newpage
+\subsection*{Problem 1.6}
+Plot:
+
+\includegraphics[width=\linewidth]{p1}
+
+Code:
+
+\begin{python}
 def e_step(theta, betas):
-    q = 'not implemented'
+    q = np.multiply(gamma.pdf(x, alpha, scale=(1 / betas)), theta)
+    q /= np.sum(q, axis=1)[:,None]
     return q
 
 
 def m_step(q):
-    theta_hat = 'not implemented'
-    beta_hats = 'not implemented'
+    qsum = np.sum(q, axis=0)
+    theta_hat = qsum / x.shape[0]
+    beta_hats = (qsum * alpha) / (q.T@x).flatten()
     return theta_hat, beta_hats
 
 
 def log_px(x, theta, betas):
-    p = 'not implemented'
+    p = np.log(np.multiply(gamma.pdf(x, alpha, scale=(1 / betas)), theta))
     return p
 
 
 def run_em(theta, betas, iterations=1000):
-    theta = 'not implemented'
-    betas = 'not implemented'
+    for _ in range(iterations):
+        q = e_step(theta, betas)
+        theta, betas = m_step(q)
     return theta, betas
-    \end{python}
-\end{enumerate}
+\end{python}
 
 
 \newpage
@@ -245,36 +352,54 @@ For this problem you will implement PCA from scratch on the first 6000 images of
 \subsection*{Solution}
 Plots:
 
-% \includegraphics[width=\linewidth]{p2_cfvs}
+\includegraphics[width=\linewidth]{p2_cfvs}
 
-% \includegraphics[width=0.25\linewidth]{p2_mean}
-% \includegraphics[width=0.75\linewidth]{p2_pcomps}
+\includegraphics[width=0.25\linewidth]{p2_mean}
+\includegraphics[width=0.75\linewidth]{p2_pcomps}
 
 Code:
 
 \begin{python}
 def pca(x, n_comps=500):
-    top_eigvals = 'not implemented'
-    top_pcomps = 'not implemented'
+    xm = x - x.mean(axis=0)
+
+    U, S, V = np.linalg.svd(xm, full_matrices=False)
+
+    top_eigvals = (S ** 2)[:n_comps]
+    top_pcomps = V.T[:,:n_comps].T
+
     return top_eigvals, top_pcomps
 
 
 def calc_cfvs(eigvals):
-    cum_frac_vars = 'not implemented'
-    return cum_frac_vars
+    return np.cumsum(eigvals) / np.sum(eigvals)
 
 
 def calc_errs(x, pcomps):
-    err_mean = 'not implemented'
-    err_pcomp = 'not implemented'
+    xm = x - x.mean(axis=0)
+    err_mean = np.mean(np.linalg.norm(xm, axis=1) ** 2)
+
+    pcs = pcomps[:n_comps]
+    err_pcomp = np.mean(np.linalg.norm(xm - xm@pcs.T@pcs, axis=1) ** 2)
+
     return err_mean, err_pcomp
 \end{python}
 
-\begin{enumerate}
-  \item 
-  \item 
-  \item 
-\end{enumerate}
+\subsection*{Problem 2.1}
+
+Nearly all of the variance is explained by the first $500$ components. The cumulative proportion of variance explained increases at a decreasing rate as $k$ increases, reaching a ``hump'' at around $k=50$ and quickly plateauing.
+
+\subsection*{Problem 2.2}
+
+The PC images are very different than the cluster centers from k-means on the un-standardized data set (from Homework 4 Problem 2). Where the un-standardized k-means images are clear numbers, the PC images are blurred and with the exception of PC 0 do not look like numbers.
+
+Interestingly, the PC images look somewhat similar to the cluster centers from k-means when the data is standardized: the edges are mostly grey and most of the variance occurs in the center. However, whereas the k-means cluster centers generally like distinct and clear numbers, the PC images do not and look like an assembly of white and black splotches (again with the exception of PC zero).
+
+\subsection*{Problem 2.3}
+The reconstruction error using the mean was $3,436,024$ and the reconstruction error using the mean and the top $10$ principal components was $1,731,315$. This is around half of the k-means mean objective loss when the data was not standardized, which (from Homework 4 Problem 2) was around $2,550,000$. These reconstruction errors are all roughly similar, with the mean and top $10$ principal components performing best.
+
+\subsection*{Problem 2.4}
+Multiplying the matrix of principle components $U$ by some rotation matrix $R$ would change the reconstruction error. The principal components are in the axes of the highest variance in the data: by rotating the principal components, they would no longer represent the axes of highest variance (the one exception being the rare instance where they were rotated orthogonally), thus changing the interpretation of the components as well, and so would yield completely different reconstructed images.
 
 \newpage
 
@@ -375,13 +500,32 @@ questions and show your work (i.e., state what the blocking path(s) is/are and w
 \newpage
 \section*{Solution}
 \begin{enumerate}
-  \item 
-  \item 
-  \item 
-  \item 
-  \item 
-  \item 
-  \item 
+  \item NO. The path from Weekend -- Traveling -- Get sleep is not blocked following d-separation rules as we do not observe Traveling, and so they are not independent. Intuitively, if do not observe Traveling, then whether or not it is the Weekend will affect whether or not we got sleep.
+  \item YES.
+  \item NO. By d-separation rule 4, since eating exotic food is a child of both Friends over and Sick and we observed Eat exotic food, then Friends over and Sick are not independent. Intuitively, observing eating exotic food gives us information about both whether or not we had friends over or were sick, so they are no longer independent.
+  \item NO. By d-separation rule 3, since Weekend was not observed, Friends over is a child of weekend, and Get sleep is a descendant of Weekend, then they are not independent. Intuitively, if we observed eating exotic foods then we have information about having friends over and being sick, and since being sick affects our sleep then they are not independent.
+  \item YES.
+  \item The modified network:
+  \begin{center}
+\begin{tikzpicture}[
+          node distance=1cm and .5cm,
+          bn/.style={draw,ellipse,text width=2cm,align=center}
+            ]
+            \node[bn] (w) {\attr{Weekend}};
+            \node[bn,below right=of w] (t) {\attr{Traveling}};
+            \node[bn,right=of t] (s) {\attr{Sick}};
+            \node[bn,below left=of w] (f) {\attr{Friends over}};
+            \node[bn,below right=of f] (eef) {\attr{Eat exotic foods}};
+            \node[bn,right=of eef] (gs) {\attr{Get sleep}};
+            \path (w) edge[-latex] (t)
+            (w) edge[-latex] (f)
+            (f) edge[-latex] (eef)
+            (t) edge[-latex] (eef)
+            (s) edge[-latex] (gs)
+            (s) edge[-latex] (eef);
+            \end{tikzpicture}
+\end{center}
+  \item YES, Friends over is independent to Get sleep in this modified network. Observing Eat exotic foods would cause them to be no longer independent. This is because by d-separation rule 4, observing Eat exotic foods would cause Friends over and Sick to no longer be independent, and since Get sleep is a child of Sick then it would also not be independent of Friends over.
 \end{enumerate}
 
 \newpage
@@ -392,8 +536,9 @@ questions and show your work (i.e., state what the blocking path(s) is/are and w
 
 \subsection*{Collaborators and Resources}
 Whom did you work with, and did you use any resources beyond cs181-textbook and your notes?
+James Kitch, Julian Schmitt
 
 \subsection*{Calibration}
-Approximately how long did this homework take you to complete (in hours)? 
+Approximately how long did this homework take you to complete (in hours)? 25
 
 \end{document}
