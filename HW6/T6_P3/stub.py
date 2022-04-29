@@ -25,6 +25,8 @@ class Learner(object):
         self.last_state = None
         self.last_action = None
         self.last_reward = None
+        self.A = np.zeros((2, X_SCREEN // X_BINSIZE, Y_SCREEN // Y_BINSIZE))
+        self.gamma = 0.2
 
         # We initialize our Q-value grid that has an entry for each action and state.
         # (action, rel_x, rel_y)
@@ -57,8 +59,24 @@ class Learner(object):
         # 2. Perform the Q-Learning update using 'current state' and the 'last state'.
         # 3. Choose the next action using an epsilon-greedy policy.
 
-        new_action = npr.rand() < 0.1
         new_state = state
+        sp = self.discretize_state(new_state)
+
+        if self.last_state:
+            s = self.discretize_state(self.last_state)
+            a = self.last_action
+            self.A[a, s[0], s[1]] += 1
+            alpha = 1 / (1 + 0.05 * self.A[a, s[0], s[1]]) * 0.5
+            self.Q[a, s[0], s[1]] = self.Q[a, s[0], s[1]] + alpha * (self.last_reward + self.gamma * (np.max(self.Q[:, sp[0], sp[1]])) - self.Q[a, s[0], s[1]])
+        
+        new_action = 0
+        epsilon = 1 / (1 + 0.5 * self.A[:, sp[0], sp[1]].sum()) * 0.5
+        if npr.rand() < epsilon:
+            # Take random choice of 0 or 1
+            new_action = int(0.5 > npr.rand())
+        else:
+            # Take optimal action
+            new_action = int(np.argmax(self.Q[:, sp[0], sp[1]]))
 
         self.last_action = new_action
         self.last_state = new_state
@@ -104,7 +122,7 @@ if __name__ == '__main__':
     hist = []
 
     # Run games. You can update t_len to be smaller to run it faster.
-    run_games(agent, hist, 100, 100)
+    run_games(agent, hist, 100, 25)
     print(hist)
 
     # Save history. 
