@@ -19,9 +19,11 @@
 \usepackage{bm}
 \usepackage{enumitem}
 \usepackage{tikz}
+\usetikzlibrary{positioning,shapes,arrows}
 \usepackage{xifthen}
 \usepackage{soul}
 \usepackage{framed}
+\usepackage{pythonhighlight}
 
 \usepackage[mmddyyyy,hhmmss]{datetime}
 
@@ -121,11 +123,124 @@ $$
 \end{enumerate}
 \end{problem}
 
-\textbf{Solution:}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection*{Problem 1.1}
+We want to draw the graphical model corresponding to the factorization. See the figure below.
+
+\begin{center}
+\begin{tikzpicture}[
+          node distance=1cm and .5cm,
+          bn/.style={draw,ellipse,text width=2cm,align=center}
+            ]
+    \node[bn] (r) {\attr{R}};
+    \node[bn,below right=of r] (g) {\attr{G}};
+    \node[bn,right=of r] (s) {\attr{S}};
+    \path (r) edge[-latex] (g)
+    (s) edge[-latex] (g);
+\end{tikzpicture}
+\end{center}
+
+$R$ and $S$ are conditionally dependent only given that $G$ is unobserved.
+
+\subsection*{Problem 1.2}
+We want to find the probability that the sprinkler is on given that it is raining (we have not checked the grass). This is equivalent to the following.
+\begin{align*}
+    \Pr(S = 1 | R = 1) &= \frac{\Pr(S = 1, R = 1)}{\Pr(R = 1)}\\
+\end{align*}
+Let us deal with the joint probability first.
+\begin{align*}
+    \Pr(S = 1, R = 1) &= \Pr(R = 1)\Pr(S = 1)\Pr(G = 0\, |\, R = 1, S = 1) + \Pr(R = 1)\Pr(S = 1)\Pr(G = 1\, |\, R = 1, S = 1)\\
+    &= (0.25) (0.5) (0) + (0.25) (0.5) (1)\\
+    &= 0.125
+\end{align*}
+Then we sub this back in.
+\begin{align*}
+    \Pr(S = 1 | R = 1) &= \frac{0.125}{0.25}\\
+    &= 0.5
+\end{align*}
+And so this probability is $\boxed{0.5}$.
+
+\subsection*{Problem 1.3}
+We want to find the probability that the sprinkler is on given that the grass is wet (without checking the rain). This is equivalent to the following.
+\begin{align*}
+    \Pr(S = 1 | G = 1) &= \frac{\Pr(S = 1, G = 1)}{\Pr(G = 1)}\\
+\end{align*}
+Let us deal with the joint probability first.
+\begin{align*}
+    \Pr(S = 1, G = 1) &= \Pr(R = 1)\Pr(S = 1)\Pr(G = 1\, |\, R = 1, S = 1) + \Pr(R = 0)\Pr(S = 1)\Pr(G = 1\, |\, R = 0, S = 1)\\
+    &= (0.25) (0.75) (1) + (0.75) (0.5) (0.75)\\
+    &= 0.40625
+\end{align*}
+Now we find $\Pr(G = 1)$.
+\begin{align*}
+    \Pr(G = 1) &= \sum_{R, S} \Pr(R) \Pr(S) \Pr(G = 1 | R, S)\\
+    &= (0.75) (0.5) (0) + (0.25) (0.5) (0.75) + (0.75) (0.5) (0.75) + (0.25) (0.5) (1)\\
+    &= 0.5
+\end{align*}
+Then we sub these results back in.
+\begin{align*}
+    \Pr(S = 1 | R = 1) &= \frac{0.40625}{0.5}\\
+    &= 0.8125
+\end{align*}
+And so this probability is $\boxed{0.8125}$.
+
+\subsection*{Problem 1.4}
+We want to find the probability that the sprinkler is on given that it is raining and the grass is wet.
+\begin{align*}
+    \Pr(S = 1 | G = 1, R = 1) &= \frac{\Pr(S = 1, G = 1, R = 1)}{\Pr(G = 1, R = 1)}
+\end{align*}
+Let us deal with the numerator first.
+\begin{align*}
+    \Pr(S = 1, G = 1, R = 1) &= \Pr(R = 1)\Pr(S = 1)\Pr(G = 1\, |\, R = 1, S = 1)
+    &= (0.25) (0.5) (1)\\
+    &= 0.125
+\end{align*}
+Then we deal with the denominator.
+\begin{align*}
+    \Pr(G = 1, R = 1) &= \sum_{S} \Pr(S, G = 1, R = 1)\\
+    &= \sum_{S} \Pr(R = 1)\Pr(S)\Pr(G = 1 | R = 1, S)\\
+    &= (0.25) (0.5) (0.75) + (0.5) (0.25) (1)\\
+    &= 0.21875
+\end{align*}
+Then we sub these results back in.
+\begin{align*}
+    \Pr(S = 1 | G = 1, R = 1) &= \frac{0.125}{0.21875}\\
+    &= 0.571
+\end{align*}
+And so this probability is $\boxed{0.571}$.
+
+\subsection*{Problem 1.5}
+The above probabilities show an explaining away effect. As we can see, $\Pr(S = 1 | G = 1) < \Pr(S = 1 | G = 1, R = 1)$: the probability that the sprinkler is on given that the grass is wet is lower than the probability that the sprinkler given that the grass is wet and it is raining. This makes sense, because the fact that it is raining ``explains'' that the grass is wet, making it less likely that the sprinkler is on.
+
+\subsection*{Problem 1.6}
+We want to write down the variable expression with ordering $S, G, C$ for the marginal distribution $\Pr(R)$.
+\begin{align*}
+    \Pr(R) &= \sum_{C} \sum_{G} \sum_{S} \Pr(C) \Pr(R | C) \Pr(S | C) \Pr(G | R, S)\\
+    &= \sum_{C} \Pr(C) \Pr(R | C) \sum_{G} \sum_{S} \Pr(S | C) \Pr(G | R, S)\\
+    &= \sum_{C} \Pr(C) \Pr(R | C) \sum_{G} \phi_1(C, G, R) \\
+    &= \sum_{C} \Pr(C) \Pr(R | C) \phi_2(C, R) \\
+    &= \phi_3(R)
+\end{align*}
+
+\subsection*{Problem 1.7}
+We want to write down the variable expression with ordering $C, G, S$ for the marginal distribution $\Pr(R)$.
+\begin{align*}
+    \Pr(R) &= \sum_{S} \sum_{G} \sum_{C} \Pr(C) \Pr(R | C) \Pr(S | C) \Pr(G | R, S)\\
+    &= \sum_{S} \sum_{G} \Pr(G | R, S) \sum_{C} \Pr(C) \Pr(R | C) \Pr(S | C) \\
+    &= \sum_{S} \sum_{G} \Pr(G | R, S) \phi_1(R, S) \\
+    &= \sum_{S} \phi_1(R, S) \sum_{G} \Pr(G | R, S) \\
+    &= \sum_{S} \phi_1(R, S) \phi_2(R, S) \\
+    &= \phi_3(R)
+\end{align*}
+
+\subsection*{Problem 1.8}
+The first ordering (in Problem 1.6) has an innermost term of $\Pr(S|C) \Pr(G | R, S)$ which contains four variables, $S, C, G, R$, and so the complexity is $O(K^4)$ for the $K$ values of $R$. The second ordering has an innermost term of $\Pr(C)\Pr(R | C) \Pr(S | C)$ which contains three variables, $C, R, S$, and so the complexity is $O(K^3)$ for the $K$ values of $R$. And so the second elimination ordering $C, G, S$ takes less computation.
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+\newpage
 \begin{problem}[Policy and Value Iteration, 15 pts]
 
 This question asks you to implement policy and value iteration in a
@@ -187,9 +302,141 @@ Note that we are doing infinite-horizon planning to maximize the expected reward
 \end{itemize}
 \end{framed}
 
-\textbf{Solution:}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\subsection*{Problem 2.1a}
 
+We want to implement the function \texttt{policy\_evaluation}. We do so iteratively using a threshold of $\theta = 0.0001$. The code is given below.
+\begin{python}
+def policy_evaluation(pi, gamma):
+    theta = 0.0001
+    V = np.zeros(num_states)
+    diff = float('inf')
+    while diff > theta:
+        V_k = np.zeros(num_states)
+        for s1 in range(num_states):
+            expected = 0
+            for s2 in range(num_states):
+                expected += get_transition_prob(s1, pi[s1], s2) * V[s2]
+            V_k[s1] = get_reward(s1) + gamma * expected
+        diff = np.max(np.abs(V_k - V))
+        V = np.copy(V_k)
+    return V
+\end{python}
 
+\subsection*{Problem 2.1b}
+We want to implement the function \texttt{update\_policy\_iteration} to update the policy given a value function using one step of policy iteration. The code is given below.
+\begin{python}
+def update_policy_iteration(V, gamma):
+    pi_new = np.zeros(num_states)
+    for s1 in range(num_states):
+        mval = -float('inf')
+        for a in range(num_actions):
+            expected = 0 
+            for s2 in range(num_states):
+                expected += get_transition_prob(s1, a, s2) * V[s2]
+            cval = get_reward(s1) + gamma * expected
+            if cval > mval:
+                mval = cval
+                pi_new[s1] = a
+    return pi_new
+\end{python}
+
+\newpage
+\subsection*{Problem 2.1c}
+We want to plot the learned function and associated policy for the first 4 policy iterations.
+
+\includegraphics[width=0.5\linewidth]{q2/polit1.png}
+\includegraphics[width=0.5\linewidth]{q2/polit2.png}
+\includegraphics[width=0.5\linewidth]{q2/polit3.png}
+\includegraphics[width=0.5\linewidth]{q2/polit4.png}
+
+\newpage
+\subsection*{Problem 2.1d}
+We want to plot the final learned value function and policy, setting \texttt{ct = 0.01} and increasing \texttt{max\_iter} to an appropriate number. The final learned value and policy is given below.
+
+\includegraphics[width=0.5\linewidth]{q2/polit5.png}
+
+This took five iterations to converge. Trying \texttt{max\_iter = 0.001} and \texttt{max\_iter = 0.0001} did not change the number of iterations until convergence.
+
+\subsection*{Problem 2.2a}
+We want to implement the function \texttt{update\_value\_iteration}. The code is below.
+\begin{python}
+def update_value_iteration(V, gamma):
+    V_new = np.zeros(num_states)
+    pi_new = np.zeros(num_states)
+    
+    for s1 in range(num_states):
+        mvalue = -float('inf')
+        for a in range(num_actions):
+            expected = 0
+            for s2 in range(num_states):
+                expected += get_transition_prob(s1, a, s2) * V[s2]
+            cvalue = get_reward(s1) + gamma * expected
+            if mvalue < cvalue:
+                mvalue = cvalue
+        V_new[s1] = mvalue
+
+    pi_new = np.zeros(num_states)
+    for s1 in range(num_states):
+        mval = -float('inf')
+        for a in range(num_actions):
+            expected = 0 
+            for s2 in range(num_states):
+                expected += get_transition_prob(s1, a, s2) * V_new[s2]
+            cval = get_reward(s1) + gamma * expected
+            if cval > mval:
+                mval = cval
+                pi_new[s1] = a
+    
+    return V_new, pi_new
+\end{python}
+
+\subsection*{Problem 2.2b}
+We want to show the learned value function and the associated for the first 4 value iterations.
+
+\includegraphics[width=0.5\linewidth]{q2/valit1.png}
+\includegraphics[width=0.5\linewidth]{q2/valit2.png}
+\includegraphics[width=0.5\linewidth]{q2/valit3.png}
+\includegraphics[width=0.5\linewidth]{q2/valit4.png}
+
+\newpage
+\subsection*{Problem 2.2c}
+We want to plot the final learned value function and policy, setting \texttt{ct = 0.01} and increasing \texttt{max\_iter} to an appropriate number. The final learned value and policy is given below.
+
+\includegraphics[width=0.5\linewidth]{q2/valit25.png}
+
+Value iteration takes 25 iterations to converge. Setting \texttt{ct = 0.001} requires $21$ iterations to converge, and setting \texttt{ct = 0.0001} requires $38$ iterations to converge. As \texttt{ct} decreases, the number of iterations required for converge increases.
+
+\subsection*{2.3}
+Value iteration takes many more iterations to converge than policy iteration. When timing both value and policy iteration, both had an overall runtime of approximately $2.1$ seconds on my machine. This means that value iteration took $2.1 / 25 \approx 0.085$ seconds per iteration whereas policy iteration took $2.1 / 5 = 0.42$ seconds per iteration. So, while policy iteration takes less iterations overall, the increased computational cost of each iteration results in it having approximately the same runtime as value iteration.
+
+\newpage
+\subsection*{2.4}
+We want to plot the learned policy for each $\gamma \in \{0.6, 0.7, 0.8, 0.9\}$.
+
+First, with policy iteration we get the following plots. The top-left is $\gamma = 0.6$, the top-right is $\gamma =0.7$, the bottom-left is $\gamma = 0.8$, and the bottom-right plot is $\gamma = 0.9.$
+
+\includegraphics[width=0.5\linewidth]{q2/gammas/polit06.png}
+\includegraphics[width=0.5\linewidth]{q2/gammas/polit07.png}
+\includegraphics[width=0.5\linewidth]{q2/gammas/polit08.png}
+\includegraphics[width=0.5\linewidth]{q2/gammas/polit09.png}
+
+Next, with value iteration, we get the following plots. The ordering of the plots by gammas is the same as that of policy iteration above.
+
+\includegraphics[width=0.5\linewidth]{q2/gammas/valit06.png}
+\includegraphics[width=0.5\linewidth]{q2/gammas/valit07.png}
+\includegraphics[width=0.5\linewidth]{q2/gammas/valit08.png}
+\includegraphics[width=0.5\linewidth]{q2/gammas/valit09.png}
+
+As we can see, for lower values of gamma the converged policy tends to take actions that move toward the closest positive cell. This is because farther positive rewards are discounted below the value of the closer reward. For higher values of gamma, further positive rewards are not as heavily discounted and so the optimal policy is to move in their direction.
+
+For value iteration, as the value of gamma increases the runtime also increases. For policy iteration, as the value of gamma increases the runtime also increases albeit at a much slower rate than for value iteration.
+
+\subsection*{2.5}
+We want to discuss the effect of a modification to the game where the game ends at any state with a positive reward on the optimal policy as a function of gamma. As gamma decreases, nearby states are valued more highly than far-away states, and so the optimal policy would favor going to a near-by state and then ending the game. As gamma increases, far-away states are valued around the same as nearby-states, and so the optimal policy would favor the cell with the highest reward regardless of its distance from the current state.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \begin{problem}[Reinforcement Learning, 20 pts]
   In 2013, the mobile game \emph{Flappy Bird} took the world by storm. You'll be developing a Q-learning agent to play a similar game, \emph{Swingy Monkey} (See Figure~\ref{fig:swingy}).  In this game, you control a monkey that is trying to swing on vines and avoid tree trunks.  You can either make him jump to a new vine, or have him swing down on the vine he's currently holding.  You get points for successfully passing tree trunks without hitting them, falling off the bottom of the screen, or jumping off the top.  There are some sources of randomness: the monkey's jumps are sometimes higher than others, the gaps in the trees vary vertically, the gravity varies from game to game, and the distances between the trees are different.  You can play the game directly by pushing a key on the keyboard to make the monkey jump.  However, your objective is to build an agent that \emph{learns} to play on its own. 
@@ -236,8 +483,199 @@ discount rate $\gamma$, and exploration rate $\epsilon$. \emph{Do not use outsid
     }
     \caption{(a) Screenshot of the Swingy Monkey game.  (b) Interpretations of various pieces of the state dictionary.}
 \end{figure}
-    
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
 \textbf{Solution:}
+My agent was able to consistently get large scores before the 100th epoch number, as shown in the table below. As my method of choice to increase performance, I decided to decay both the $\epsilon$ greedy-policy parameter and $\alpha$ learning rate over time. I used the following function for $\epsilon_t$.
+\begin{equation*}
+    \epsilon_t = \frac{1}{1 + \frac{1}{2} N(s) \epsilon_0}
+\end{equation*}
+Where $N(s)$ is the number of times an action has been taken from state $s$ and $\epsilon_0$ is the initial epsilon, a choice of hyper-parameter. I used the following function for $\alpha_t$.
+\begin{equation*}
+    \alpha_t = \frac{1}{1 + \frac{1}{20} N(s,a) \alpha_0}
+\end{equation*}
+Where $N(s, a)$ is the number of times the action $a$ has been taken from state $s$ and $\alpha_0$ is the initial alpha. This method combines two approaches I learned from section (where I learned to use $N(s)$ and $N(s,a)$) and \href{https://medium.com/analytics-vidhya/learning-rate-decay-and-methods-in-deep-learning-2cee564f910b}{this Medium blog post} (where I learned a method for decaying the learning rate (despite that the post decays using epoch number)). The choice of $1/2$ and $1/20$ was obtained by eye-balling the rate of decay and briefly experimenting.
+
+To find my hyper-parameters, I searched in intervals of $0.2$ in the range $(0.1, 1)$. For computational purposes I decided to fix $\gamma = 0.9$ (which was suggested by a TF on Ed) and only search for the initial $\epsilon_0$ and $\alpha_0$ as I did not have time to search over $\gamma$. I ran each hyper-parameter combination for five histories and computed the maximum score for each history. I then averaged these maximum scores as well as their variances, which are reported in the table below. 
+\begin{center}
+\begin{tabular}{||c c c c c||} 
+ \hline
+ $\epsilon_0$ & $\alpha_0$ & Max Score & Mean Max Score & Variance of Max Scores\\ [0.5ex] 
+ \hline\hline
+ 0.1 & 0.1 & 1392 & 1011.6 & 60223.04 \\ 
+ \hline
+ 0.1 & 0.3 & 1387 & 1217 & 36797.2 \\
+ \hline
+ 0.1 & 0.5 & 1073 & 904 & 14070 \\
+ \hline
+ 0.1 & 0.7 & 859 & 761.6 & 6433.04 \\
+ \hline
+ 0.1 & 0.9 & 1633 & 1049.2 & 112134.96 \\
+ \hline
+ 0.3 & 0.1 & 1621 & 1037.6 & 101155.44 \\ 
+ \hline
+ 0.3 & 0.3 & 1005 & 905.4 & 6616.64 \\
+ \hline
+ 0.3 & 0.5 & 1058 & 634.0 & 240040 \\
+ \hline
+ 0.3 & 0.7 & 843 & 773.4 & 2497 \\
+ \hline
+ 0.3 & 0.9 & 1861 & 1151 & 255509.36 \\
+ \hline
+ 0.5 & 0.1 & 1291 & 978.8 & 66869.36 \\ 
+ \hline
+ 0.5 & 0.3 & 1172 & 914.8 & 31078.16 \\
+ \hline
+ 0.5 & 0.5 & 1139 & 704.6 & 141217.04 \\
+ \hline
+ 0.5 & 0.7 & 1200 & 968.200 & 24439.36 \\
+ \hline
+ 0.5 & 0.9 & 1378 & 926.8 & 69152.56 \\
+ \hline
+ 0.7 & 0.1 & 1461 & 965.6 & 132876.64 \\ 
+ \hline
+ 0.7 & 0.3 & 1561 & 1080.4 & 124933.04 \\
+ \hline
+ 0.7 & 0.5 & 1174 & 807.4 & 60172.24 \\
+ \hline
+ 0.7 & 0.7 & 943 & 808.6 & 12146.64 \\
+ \hline
+ 0.7 & 0.9 & 1205 & 1088.4 & 8107.04 \\
+ \hline
+ 0.9 & 0.1 & 1148 & 857.6 & 33975.04 \\ 
+ \hline
+ 0.9 & 0.3 & 1163 & 875.8 & 40055.36 \\
+ \hline
+ 0.9 & 0.5 &  1158 & 881.4 & 41651.04 \\
+ \hline
+ 0.9 & 0.7 & 1118 & 757.2 & 151257.36 \\
+ \hline
+ 0.9 & 0.9 & 1851 & 1014.4 & 196285.84 \\
+ \hline
+\end{tabular}
+\end{center}
+As we can see, the variances are all very high. This may be due to only running $5$ histories: running more would potentially reduce this variance. Based on the values in this table, I decided to choose $\epsilon_0 = 0.1$ and $\alpha_0 = 0.9$. This choice had the highest max and mean score over the five histories. While the variance is high, I think the trade-off of an improved score is worth it.
+
+My code is given below.
+\begin{python}
+# Imports.
+import numpy as np
+import numpy.random as npr
+import pygame as pg
+import matplotlib.pyplot as plt
+
+# uncomment this for animation
+# from SwingyMonkey import SwingyMonkey
+
+# uncomment this for no animation
+from SwingyMonkeyNoAnimation import SwingyMonkey
+
+
+X_BINSIZE = 200
+Y_BINSIZE = 100
+X_SCREEN = 1400
+Y_SCREEN = 900
+
+
+class Learner(object):
+    def __init__(self, _gamma = 0.9, _init_epsilon = 0.1, _init_alpha = 0.9):
+        self.last_state = None
+        self.last_action = None
+        self.last_reward = None
+        self.A = np.zeros((2, X_SCREEN // X_BINSIZE, Y_SCREEN // Y_BINSIZE))
+        self.gamma = _gamma
+        self.init_epsilon = _init_epsilon
+        self.init_alpha = _init_alpha
+
+
+        # We initialize our Q-value grid that has an entry for each action and state.
+        # (action, rel_x, rel_y)
+        self.Q = np.zeros((2, X_SCREEN // X_BINSIZE, Y_SCREEN // Y_BINSIZE))
+
+    def reset(self):
+        self.last_state = None
+        self.last_action = None
+        self.last_reward = None
+
+    def discretize_state(self, state):
+        """
+        Discretize the position space to produce binned features.
+        rel_x = the binned relative horizontal distance between the monkey and the tree
+        rel_y = the binned relative vertical distance between the monkey and the tree
+        """
+
+        rel_x = int((state["tree"]["dist"]) // X_BINSIZE)
+        rel_y = int((state["tree"]["top"] - state["monkey"]["top"]) // Y_BINSIZE)
+        return (rel_x, rel_y)
+
+    def action_callback(self, state):
+        new_state = state
+        sp = self.discretize_state(new_state)
+
+        if self.last_state:
+            s = self.discretize_state(self.last_state)
+            a = self.last_action
+            self.A[a, s[0], s[1]] += 1
+            alpha = 1 / (1 + 0.05 * self.A[a, s[0], s[1]]) * self.init_alpha
+            self.Q[a, s[0], s[1]] = self.Q[a, s[0], s[1]] + alpha * (self.last_reward + self.gamma * (np.max(self.Q[:, sp[0], sp[1]])) - self.Q[a, s[0], s[1]])
+        
+        new_action = 0
+        epsilon = 1 / (1 + 0.5 * self.A[:, sp[0], sp[1]].sum()) * self.init_epsilon
+        if npr.rand() < epsilon:
+            # Take random choice of 0 or 1
+            new_action = int(0.5 > npr.rand())
+        else:
+            # Take optimal action
+            new_action = int(np.argmax(self.Q[:, sp[0], sp[1]]))
+
+        self.last_action = new_action
+        self.last_state = new_state
+
+        return self.last_action
+
+    def reward_callback(self, reward):
+        """This gets called so you can see what reward you get."""
+
+        self.last_reward = reward
+
+
+def run_games(learner, hist, iters=100, t_len=100):
+    """
+    Driver function to simulate learning by having the agent play a sequence of games.
+    """
+    for ii in range(iters):
+        # Make a new monkey object.
+        swing = SwingyMonkey(sound=False,  # Don't play sounds.
+                             text="Epoch %d" % (ii),  # Display the epoch on screen.
+                             tick_length=t_len,  # Make game ticks super fast.
+                             action_callback=learner.action_callback,
+                             reward_callback=learner.reward_callback)
+
+        # Loop until you hit something.
+        while swing.game_loop():
+            pass
+
+        # Save score history.
+        hist.append(swing.score)
+
+        # Reset the state of the learner.
+        learner.reset()
+    pg.quit()
+    return
+
+
+if __name__ == '__main__':
+    agent = Learner()
+    hist = []
+    run_games(agent, hist, 100, 0)
+    print(hist)
+\end{python}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \newpage
 \newpage
@@ -248,6 +686,12 @@ discount rate $\gamma$, and exploration rate $\epsilon$. \emph{Do not use outsid
 \subsection*{Name}
 \subsection*{Collaborators and Resources}
 Whom did you work with, and did you use any resources beyond cs181-textbook and your notes?
+
+James Kitch, Julian Schmitt.
+
+I consulted this Medium blog post which described a learning rate decay method: https://medium.com/analytics-vidhya/learning-rate-decay-and-methods-in-deep-learning-2cee564f910b. I combined this with an idea from section notes to come up with my functions for $\alpha_t$ and $\epsilon_t$.
+
 \subsection*{Calibration}
 Approximately how long did this homework take you to complete (in hours)? 
+25 hours.
 \end{document}

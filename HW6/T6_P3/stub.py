@@ -2,6 +2,7 @@
 import numpy as np
 import numpy.random as npr
 import pygame as pg
+import matplotlib.pyplot as plt
 
 # uncomment this for animation
 # from SwingyMonkey import SwingyMonkey
@@ -17,16 +18,15 @@ Y_SCREEN = 900
 
 
 class Learner(object):
-    """
-    This agent jumps randomly.
-    """
-
-    def __init__(self):
+    def __init__(self, _gamma = 0.9, _init_epsilon = 0.1, _init_alpha = 0.9):
         self.last_state = None
         self.last_action = None
         self.last_reward = None
         self.A = np.zeros((2, X_SCREEN // X_BINSIZE, Y_SCREEN // Y_BINSIZE))
-        self.gamma = 0.2
+        self.gamma = _gamma
+        self.init_epsilon = _init_epsilon
+        self.init_alpha = _init_alpha
+
 
         # We initialize our Q-value grid that has an entry for each action and state.
         # (action, rel_x, rel_y)
@@ -49,16 +49,6 @@ class Learner(object):
         return (rel_x, rel_y)
 
     def action_callback(self, state):
-        """
-        Implement this function to learn things and take actions.
-        Return 0 if you don't want to jump and 1 if you do.
-        """
-
-        # TODO (currently monkey just jumps around randomly)
-        # 1. Discretize 'state' to get your transformed 'current state' features.
-        # 2. Perform the Q-Learning update using 'current state' and the 'last state'.
-        # 3. Choose the next action using an epsilon-greedy policy.
-
         new_state = state
         sp = self.discretize_state(new_state)
 
@@ -66,11 +56,11 @@ class Learner(object):
             s = self.discretize_state(self.last_state)
             a = self.last_action
             self.A[a, s[0], s[1]] += 1
-            alpha = 1 / (1 + 0.05 * self.A[a, s[0], s[1]]) * 0.5
+            alpha = 1 / (1 + 0.05 * self.A[a, s[0], s[1]]) * self.init_alpha
             self.Q[a, s[0], s[1]] = self.Q[a, s[0], s[1]] + alpha * (self.last_reward + self.gamma * (np.max(self.Q[:, sp[0], sp[1]])) - self.Q[a, s[0], s[1]])
         
         new_action = 0
-        epsilon = 1 / (1 + 0.5 * self.A[:, sp[0], sp[1]].sum()) * 0.5
+        epsilon = 1 / (1 + 0.5 * self.A[:, sp[0], sp[1]].sum()) * self.init_epsilon
         if npr.rand() < epsilon:
             # Take random choice of 0 or 1
             new_action = int(0.5 > npr.rand())
@@ -122,8 +112,6 @@ if __name__ == '__main__':
     hist = []
 
     # Run games. You can update t_len to be smaller to run it faster.
-    run_games(agent, hist, 100, 25)
+    run_games(agent, hist, 100, 0)
     print(hist)
 
-    # Save history. 
-    np.save('hist', np.array(hist))
